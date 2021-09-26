@@ -1,0 +1,28 @@
+name: 'Test Categories per Branch'
+description: 'Gets all test categories contained in the branch assembly (for use in matrix strategies).'
+branding:
+  icon: list
+  color: orange
+inputs:
+  test-assembly:
+    description: 'Test assembly file.'
+    required: true
+  maximum-tests-group:
+    description: 'Maximum tests per group.'
+    required: true
+    default: 100
+outputs:
+  count:
+    description: 'Number of test groups defined.'
+  mode:
+    description: 'Test group mode.'
+  tests:
+    description: 'Json containing tests separated by groups.'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+  - '--test-assembly'
+  - ${{ inputs.test-assembly }}
+  - '--maximum-tests-group'
+  - ${{ inputs.maximum-tests-group }}

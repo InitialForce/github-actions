@@ -1,0 +1,65 @@
+name: 'Test Categories per Pull Request'
+description: 'Gets the test categories present in the assembly and related issues (for use in matrix strategies).'
+branding:
+  icon: list
+  color: orange
+inputs:
+  github-owner:
+    description: 'GitHub owner name, for example: "initialforce". Assign from `github.repository_owner`.'
+    required: true
+    default: ${{ github.repository_owner }}
+  github-repo:
+    description: 'GitHub repository name, for example: "desktop". Assign from `github.repository`.'
+    required: true
+    default: ${{ github.repository }}
+  github-pat:
+    description: 'GitHub Personal Access Token (PAT).'
+    required: true
+  jira-url:
+    description: 'Jira url.'
+    required: true
+  jira-username:
+    description: 'Jira username.'
+    required: true
+  jira-password:
+    description: 'Jira password.'
+    required: true
+  pull-request:
+    description: 'Pull request number.'
+    required: true
+  test-assembly:
+    description: 'Test assembly file.'
+    required: true
+  maximum-tests-group:
+    description: 'Maximum tests per group.'
+    required: true
+    default: 100
+outputs:
+  count:
+    description: 'Number of test groups defined.'
+  mode:
+    description: 'Test group mode.'
+  tests:
+    description: 'Json containing tests separated by groups.'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+  - '--github-owner'
+  - ${{ inputs.github-owner }}
+  - '--github-repo'
+  - ${{ inputs.github-repo }}
+  - '--github-pat'
+  - ${{ inputs.github-pat }}
+  - '--jira-url'
+  - ${{ inputs.jira-url }}
+  - '--jira-username'
+  - ${{ inputs.jira-username }}
+  - '--jira-password'
+  - ${{ inputs.jira-password }}
+  - '--pull-request'
+  - ${{ inputs.pull-request }}
+  - '--test-assembly'
+  - ${{ inputs.test-assembly }}
+  - '--maximum-tests-group'
+  - ${{ inputs.maximum-tests-group }}
