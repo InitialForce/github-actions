@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "GitHubActions.XUnitToJUnit": {
+      "commandName": "Project",
+      "commandLineArgs": "--xunit-path d:\\xunit --junit-output-path d:\\junit"
+    }
+  }
+}
