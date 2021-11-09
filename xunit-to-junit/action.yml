@@ -1,0 +1,20 @@
+name: 'XUnit to JUnit Converter'
+description: 'Convert all XUnit files into JUnit format.'
+branding:
+  icon: list
+  color: orange
+inputs:
+  xunit-path:
+    description: 'XUnit files path.'
+    required: true
+  junit-output-path:
+    description: 'JUnit converted files path.'
+    required: true
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+  - '--xunit-path'
+  - ${{ inputs.xunit-path }}
+  - '--junit-output-path'
+  - ${{ inputs.junit-output-path }}
