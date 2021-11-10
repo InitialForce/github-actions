@@ -60,17 +60,20 @@
                   <xsl:attribute name="message">
                     <xsl:value-of select="failure/message"/>
                   </xsl:attribute>
+                  <xsl:text>STEPS:
+</xsl:text>
                   <xsl:value-of select="output"/>
-                </failure>
-                <error>
-                  <xsl:attribute name="type">
-                    <xsl:value-of select="failure/@exception-type"/>
-                  </xsl:attribute>
-                  <xsl:attribute name="message">
-                    <xsl:value-of select="failure/message"/>
-                  </xsl:attribute>
+                  <xsl:text>
+</xsl:text>
+                  <xsl:text>EXCEPTION:
+                  </xsl:text>
+                  <xsl:value-of select="failure/message"/>
+                  <xsl:text>
+</xsl:text>
+                  <xsl:text>STACK TRACE:
+</xsl:text>
                   <xsl:value-of select="failure/stack-trace"/>
-                </error>
+                </failure>
               </xsl:if>
             </testcase>
           </xsl:for-each>
