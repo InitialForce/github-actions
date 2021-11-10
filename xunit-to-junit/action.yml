@@ -7,6 +7,9 @@ inputs:
   xunit-path:
     description: 'XUnit files path.'
     required: true
+  filter-pattern:
+    description: 'Filter pattern.'
+    required: false    
   junit-output-path:
     description: 'JUnit converted files path.'
     required: true
@@ -16,5 +19,7 @@ runs:
   args:
   - '--xunit-path'
   - ${{ inputs.xunit-path }}
+  - '--filter-pattern'
+  - ${{ inputs.filter-pattern }}  
   - '--junit-output-path'
   - ${{ inputs.junit-output-path }}

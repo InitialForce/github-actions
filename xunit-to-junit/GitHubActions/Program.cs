@@ -38,17 +38,25 @@ static void StartExecution(ActionInputs inputs, ILogger logger)
 
         Console.CancelKeyPress += (_, _) => tokenSource.Cancel();
 
+        logger.LogInformation($"Processing folder {inputs.XUnitPath}");
+
         var xUnitFiles = Directory
             .GetFiles(inputs.XUnitPath, "*.*", SearchOption.AllDirectories)
             .Where(file => new [] { ".xml" }
-                .Contains(Path.GetExtension(file)))
+                .Contains(Path.GetExtension(file)) && 
+                   !string.IsNullOrEmpty(inputs.FilterPattern) && 
+                   file.Contains(inputs.FilterPattern, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         foreach (var xUnitFile in xUnitFiles)
         {
+            logger.LogInformation($"Processing file {xUnitFile}");
+
             var jUnitFile = Path.Combine(inputs.JUnitOutputPath, Path.GetFileName(xUnitFile));
 
             JUnitTransformer.Transform(xUnitFile, jUnitFile);
+
+            logger.LogInformation($"Generated file {jUnitFile}");
         }
 
         Environment.Exit(0);

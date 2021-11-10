@@ -9,6 +9,11 @@ namespace InitialForce.GitHubActions.XUnitToJUnit
             HelpText = "XUnit files path.")]
         public string XUnitPath { get; set; } = null!;
 
+        [Option("filter-pattern",
+            Required = false,
+            HelpText = "Filter pattern.")]
+        public string FilterPattern { get; set; } = null!;
+
         [Option("junit-output-path",
             Required = true,
             HelpText = "JUnit converted files path.")]
