@@ -34,7 +34,7 @@
                   <xsl:value-of select="@value"/>
                 </xsl:for-each>
                 <xsl:text>] </xsl:text>
-                <xsl:value-of select="@name"/>
+                <xsl:value-of select="translate(translate(@name, '\&quot;', ''), ', exampleTags: []', '')"/>
               </xsl:attribute>
               <xsl:attribute name="classname">
                 <xsl:value-of select="@type"/>
@@ -54,6 +54,12 @@
               </xsl:if>
               <xsl:if test="@result='Fail'">
                 <failure>
+                  <xsl:attribute name="type">
+                    <xsl:value-of select="failure/@exception-type"/>
+                  </xsl:attribute>
+                  <xsl:attribute name="message">
+                    <xsl:value-of select="failure/message"/>
+                  </xsl:attribute>
                   <xsl:value-of select="output"/>
                 </failure>
                 <error>

@@ -11,7 +11,8 @@ namespace InitialForce.GitHubActions.XUnitToJUnit
 
         [Option("filter-pattern",
             Required = false,
-            HelpText = "Filter pattern.")]
+            HelpText = "Filter pattern.",
+            Default = "")]
         public string FilterPattern { get; set; } = null!;
 
         [Option("junit-output-path",

@@ -44,7 +44,7 @@ static void StartExecution(ActionInputs inputs, ILogger logger)
             .GetFiles(inputs.XUnitPath, "*.*", SearchOption.AllDirectories)
             .Where(file => new [] { ".xml" }
                 .Contains(Path.GetExtension(file)) && 
-                   !string.IsNullOrEmpty(inputs.FilterPattern) && 
+                   !string.IsNullOrEmpty(inputs.FilterPattern) || 
                    file.Contains(inputs.FilterPattern, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
