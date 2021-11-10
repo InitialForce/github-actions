@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:5.0 as build-env
 
 # Copy everything and publish the release (publish implicitly restores and builds)
 COPY . ./
-RUN dotnet publish ./GitHubActions/GitHubActions.Branch.csproj -c Release -o out --no-self-contained
+RUN dotnet publish ./GitHubActions/GitHubActions.XUnitToJUnit.csproj -c Release -o out --no-self-contained
 
 # Label the container
 LABEL maintainer="Leonardo Ferreira <leonardo@initialforce.com>"
