@@ -65,14 +65,14 @@ static async Task StartExecutionAsync(ActionInputs inputs, ILogger logger)
         if (!issues.Any())
             throw new Exception($"No Jira related issues found on pull request {inputs.PullRequestNumber}");
 
-        var components = await jiraService.GetIssueComponents(issues.First());
+        var labels = await jiraService.GetIssueLabels(issues.First());
 
-        if (!components.Any())
-            throw new Exception($"No components found on Jira issue {issues.First()}");
+        if (!labels.Any())
+            throw new Exception($"No labels found on Jira issue {issues.First()}");
 
         var groupCategories = inputs.TestAssembly
             .GetTestCategories()
-            .FilterByComponents(components)
+            .FilterByLabels(labels)
             .PartitionByCount(inputs.MaximumTestsGroup);
 
         using var stream = new MemoryStream();

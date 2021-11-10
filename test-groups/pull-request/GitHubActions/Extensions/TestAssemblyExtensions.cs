@@ -32,7 +32,7 @@ namespace InitialForce.GitHubActions.TestGroups.PullRequest.Extensions
                 .ToList();
         }
 
-        public static List<TestCategoryDto> FilterByComponents(this List<TestCategoryDto> categories, List<string> issueComponents) => categories.Where(w => issueComponents.Contains(w.Category)).ToList();
+        public static List<TestCategoryDto> FilterByLabels(this List<TestCategoryDto> categories, List<string> issueLabels) => categories.Where(w => issueLabels.Contains(w.Category)).ToList();
 
         public static List<TestCategoryDto> PartitionByCount(this List<TestCategoryDto> groupCategories, int maximumItems)
         {

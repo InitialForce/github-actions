@@ -12,7 +12,7 @@ namespace InitialForce.GitHubActions.TestGroups.PullRequest.Services
 
         public JiraService(JiraConfig config) => _config = config;
 
-        public async Task<List<string>> GetIssueComponents(string issueKey)
+        public async Task<List<string>> GetIssueLabels(string issueKey)
         {
             var issue = await _config.Url
                 .AppendPathSegment($"/rest/api/2/issue/{issueKey}")
@@ -21,14 +21,14 @@ namespace InitialForce.GitHubActions.TestGroups.PullRequest.Services
                 .GetAsync()
                 .ReceiveJson<dynamic>();
 
-            var components = new List<string>();
+            var labels = new List<string>();
 
-            foreach (var component in issue.fields.components)
+            foreach (var label in issue.fields.labels)
             {
-                components.Add(component.name.ToString());
+                labels.Add(label.ToString());
             }
 
-            return components;
+            return labels;
         }
     }
 }
