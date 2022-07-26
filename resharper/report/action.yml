@@ -1,0 +1,32 @@
+name: 'ReSharper Inspection Report'
+description: 'Generates the GitHub Actions workflow report based on ReSharper inspection file.'
+branding:
+  icon: alert-circle
+  color: orange
+inputs:
+  inspection-file:
+    description: 'Inspection file.'
+    required: true
+  workspace-directory:
+    description: 'Workspace directory.'
+    required: true
+    default: ${{ github.workspace }}
+  output-file:
+    description: 'Output file.'
+    required: true
+  severity:
+    description: 'Severity (use comma for multiple severities).'
+    required: true
+    default: 'ERROR,WARNING'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+  - '--inspection-file'
+  - ${{ inputs.inspection-file }}
+  - '--workspace-directory'
+  - ${{ inputs.workspace-directory }}
+  - '--output-file'
+  - ${{ inputs.output-file }}
+  - '--severity'
+  - ${{ inputs.severity }}
