@@ -1,0 +1,49 @@
+name: 'ReSharper Inspection Report'
+description: 'Generates the GitHub Actions workflow report based on ReSharper inspection file.'
+branding:
+  icon: alert-circle
+  color: orange
+inputs:
+  inspection-file:
+    description: 'Inspection file.'
+    required: true
+  output-file:
+    description: 'Output file.'
+    required: true
+  severity:
+    description: 'Severity (use comma for multiple severities).'
+    required: true
+    default: 'ERROR,WARNING'
+  maximum-issues:
+    description: 'Maximum number of issues to display.'
+    required: true
+    default: 100
+  working-directory:
+    description: 'Inspection working directory.'
+    required: false
+  repository-name:
+    description: 'Repository name.'
+    required: true
+    default: ${{ github.repository }}
+  ref-name:
+    description: 'Ref name.'
+    required: true
+    default: ${{ github.ref_name }}
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+  - '--inspection-file'
+  - ${{ inputs.inspection-file }}
+  - '--output-file'
+  - ${{ inputs.output-file }}
+  - '--severity'
+  - ${{ inputs.severity }}
+  - '--maximum-issues'
+  - ${{ inputs.maximum-issues }}
+  - '--working-directory'
+  - ${{ inputs.working-directory }}
+  - '--repository-name'
+  - ${{ inputs.repository-name }}
+  - '--ref-name'
+  - ${{ inputs.ref-name }}
