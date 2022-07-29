@@ -40,7 +40,9 @@ static Task StartExecutionAsync(ActionInputs inputs, ILogger logger)
 
         File.WriteAllText(inputs.OutputFile, markdown);
         
-        Environment.Exit(!issues.Any() ? 0 : 2);
+        Console.WriteLine($"::set-output name=status::{(!issues.Any() ? "success" : "failure")}");
+
+        Environment.Exit(0);
     }
     catch (Exception e)
     {
