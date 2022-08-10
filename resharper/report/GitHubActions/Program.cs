@@ -46,8 +46,11 @@ static Task StartExecutionAsync(ActionInputs inputs, ILogger logger)
     }
     catch (Exception e)
     {
+        Console.WriteLine("::set-output name=status::failure");
+        Console.WriteLine($"::set-output name=debug::{e.ToString()}");
+
         logger.LogError(e.ToString());
-        Environment.Exit(2);
+        Environment.Exit(99);
     }
 
     return Task.CompletedTask;
