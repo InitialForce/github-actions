@@ -2,7 +2,7 @@
 
 public class MarkdownService
 {
-    public string Generate(List<IssueDto> issues, ActionInputs inputs)
+    public string Generate(List<IssueDto> issues, ActionInputs inputs, int? originalNumberOfIssues = null)
     {
         var filteredIssues = issues
             .Take(inputs.MaximumIssues)
@@ -22,7 +22,15 @@ public class MarkdownService
         }
 
         var markdown = new StringBuilder();
-        markdown.Append($"Found {numberIssuesFound} issues during the inspection{(numberIssuesFound != numberFilteredIssues ? $" (Displaying the limit of {numberFilteredIssues} issues)" : "")}.\r\n\r\n");
+
+        if (!originalNumberOfIssues.HasValue)
+        {
+            markdown.Append($"Found {numberIssuesFound} issues during the inspection{(numberIssuesFound != numberFilteredIssues ? $" (Displaying the limit of {numberFilteredIssues} issues)" : "")}.\r\n\r\n");
+        }
+        else
+        {
+            markdown.Append($"Found {originalNumberOfIssues} issues during the inspection (Displaying the limit of {numberFilteredIssues} issues due a limit of 65535 characters for this report).\r\n\r\n");
+        }
 
         foreach (var projectIssues in groupedIssues)
         {

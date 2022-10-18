@@ -6,6 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
+// The check run support reports with a maximum of 65k characters.
+const int charactersLimitInReport = 65000;
+
 using var host = Host
     .CreateDefaultBuilder(args)
     .Build();
@@ -36,7 +39,14 @@ static Task StartExecutionAsync(ActionInputs inputs, ILogger logger)
         var markdownService = new MarkdownService();
 
         var issues = parseService.ParseIssues(inputs);
+        var originalNumberOfIssues = issues.Count;
         var markdown = markdownService.Generate(issues, inputs);
+
+        while (markdown.Length > charactersLimitInReport)
+        {
+            issues.RemoveAt(issues.Count - 1);
+            markdown = markdownService.Generate(issues, inputs, originalNumberOfIssues);
+        }
 
         File.WriteAllText(inputs.OutputFile, markdown);
         
