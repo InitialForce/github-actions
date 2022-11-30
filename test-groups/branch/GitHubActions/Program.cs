@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Threading;
 using InitialForce.GitHubActions.TestGroups.Branch;
 using InitialForce.GitHubActions.TestGroups.Branch.Extensions;
+using System.Collections.Generic;
 
 using var host = Host
     .CreateDefaultBuilder(args)
@@ -50,11 +51,14 @@ static void StartExecution(ActionInputs inputs, ILogger logger)
         {
             writer.WriteStartObject();
             writer.WriteStartArray("result");
-
+            //-class "MotionCatalyst.Test.UI.Features.GroupsFeature" -class "MotionCatalyst.Test.UI.Features.TestSetsFeature"
+            //--filter (FullyQualifiedName~MotionCatalyst.Test.UI.Features.GroupsFeature) | (FullyQualifiedName~MotionCatalyst.Test.UI.Features.TestSetsFeature) .\MotionCatalyst.Test.UI.dll
             foreach (var group in groupCategories)
             {
-                var traitCommand = string.Join("\" -class \"", group.Class.Split(","));
-                traitCommand = $"-class \"{traitCommand}\"";
+
+                List<string> classes = group.Class.Split(",").Select(d => $"(FullyQualifiedName~{d})").ToList();
+                var traitCommand = string.Join(" | ", classes);
+                traitCommand = $"--filter \"{traitCommand}\"";
 
                 writer.WriteStartObject();
                 writer.WriteString("group", (groupCategories.IndexOf(group) + 1).ToString());
