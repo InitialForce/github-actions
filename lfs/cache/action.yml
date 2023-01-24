@@ -1,0 +1,101 @@
+name: "Cached LFS checkout"
+
+description: "Git checkout with LFS files from cache (based on nschloe/action-cached-lfs-checkout)"
+
+branding:
+  icon: "download"
+  color: "green"
+
+inputs:
+  include:
+    description: "Explicitly include files for LFS"
+    required: false
+    default: "*"
+  fetch-depth:
+    description: "Number of commits to fetch. 0 indicates all history for all tags and branches"
+    required: false
+    default: 1
+  ref:
+    description: >
+      The branch, tag or SHA to checkout. When checking out the repository that
+      triggered a workflow, this defaults to the reference or SHA for that
+      event.  Otherwise, uses the default branch.
+    required: false
+    default: ""
+  repository:
+    description: "Repository name with owner. For example, actions/checkout"
+    default: ${{ github.repository }}
+  token:
+    description: >
+      Personal access token (PAT) used to fetch the repository. The PAT is configured
+      with the local git config, which enables your scripts to run authenticated git
+      commands. The post-job step removes the PAT.
+      We recommend using a service account with the least permissions necessary.
+      Also when generating a new PAT, select the least scopes necessary.
+      [Learn more about creating and using encrypted secrets](https://help.github.com/en/actions/automating-your-workflow-with-github-actions/creating-and-using-encrypted-secrets)
+    required: false
+    default: ${{ github.token }}
+  persist-credentials:
+    description: >
+      'Whether to configure the token or SSH key with the local git config
+    required: false
+    default: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: ${{ inputs.fetch-depth }}
+        ref: ${{ inputs.ref }}
+        repository: ${{ inputs.repository }}
+        token: ${{ inputs.token }}
+        persist-credentials: ${{ inputs.persist-credentials }}
+
+    - name: Create LFS file list (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        git lfs ls-files --long --include  "${{ inputs.include }}" --exclude  "${{ inputs.exclude }}" | cut -d ' ' -f1 > .lfs-assets-id-unsorted
+        cat .lfs-assets-id-unsorted | sort > .lfs-assets-id
+      shell: bash
+
+    - name: Create LFS file list (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        git lfs ls-files --include  "${{ inputs.include }}" | ForEach-Object { Write-Host $_.split("* ")[1] } > .lfs-assets-id
+      shell: pwsh
+
+    - name: Restore LFS cache
+      uses: actions/cache@v3.2.0
+      id: lfs-cache
+      with:
+        path: |
+          .git/lfs
+        key: lfs-${{ hashFiles('.lfs-assets-id') }}
+        restore-keys: lfs-
+
+    - name: Git LFS Pull (Linux)
+      if: runner.os == 'Linux'    
+      run: |
+        git lfs pull --include "${{ inputs.include }}"
+      shell: bash
+
+    - name: Git LFS Pull (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        git lfs pull --include "${{ inputs.include }}"
+      shell: pwsh
+
+    - name: Cleanup Temp Files (Linux)
+      if: runner.os == 'Linux'    
+      run: |
+        rm .lfs-assets-id-unsorted
+        rm .lfs-assets-id
+      shell: bash
+
+    - name: Cleanup Temp Files (Windows)
+      if: runner.os == 'Windows'    
+      run: |
+        rm .lfs-assets-id
+      shell: pwsh
