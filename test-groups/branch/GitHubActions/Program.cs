@@ -71,9 +71,9 @@ static void StartExecution(ActionInputs inputs, ILogger logger)
             writer.WriteEndObject();
         }
 
-        Console.WriteLine($"::set-output name=count::{groupCategories.Count}");
-        Console.WriteLine($"::set-output name=mode::class");
-        Console.WriteLine($"::set-output name=tests::{Encoding.UTF8.GetString(stream.ToArray()).Replace("\"", "\\\"")}");
+        Console.WriteLine($"echo \"count={groupCategories.Count}\" >> $GITHUB_OUTPUT");
+        Console.WriteLine("echo \"mode=class\" >> $GITHUB_OUTPUT");
+        Console.WriteLine($"echo \"tests={Encoding.UTF8.GetString(stream.ToArray()).Replace("\"", "\\\"")}\" >> $GITHUB_OUTPUT");
 
         Environment.Exit(0);
     }
