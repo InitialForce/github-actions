@@ -1,9 +1,8 @@
-﻿namespace InitialForce.GitHubActions.TestGroups.PullRequest.Configs
+﻿namespace InitialForce.GitHubActions.TestGroups.PullRequest.Configs;
+
+public record GitHubConfig
 {
-    public record GitHubConfig
-    {
-        public string PersonalAccessToken { get; set; }
-        public string Owner { get; set; }
-        public string Repository { get; set; }
-    }
+    public string PersonalAccessToken { get; set; }
+    public string Owner { get; set; }
+    public string Repository { get; set; }
 }
