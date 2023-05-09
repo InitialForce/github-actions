@@ -1,46 +1,27 @@
-﻿using CommandLine;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using System;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
-using InitialForce.GitHubActions.TestGroups.PullRequest;
-using InitialForce.GitHubActions.TestGroups.PullRequest.Configs;
-using InitialForce.GitHubActions.TestGroups.PullRequest.Extensions;
-using InitialForce.GitHubActions.TestGroups.PullRequest.Services;
+﻿await using var provider = new ServiceCollection()
+    .AddGitHubActionsCore()
+    .BuildServiceProvider();
 
 using var host = Host
     .CreateDefaultBuilder(args)
     .Build();
 
-var logger = host.Services.GetRequiredService<ILoggerFactory>()
-    .CreateLogger("GitHubActions");
+var core = provider.GetRequiredService<ICoreService>();
 
 var parser = Parser.Default.ParseArguments<ActionInputs>(() => new(), args);
 
 parser.WithNotParsed(
-    errors =>
-    {
-        logger.LogError(
-            string.Join(Environment.NewLine, errors.Select(error => error.ToString())));
+    errors => core.SetFailed(string.Join(Environment.NewLine, errors.Select(error => error.ToString()))));
 
-        Environment.Exit(2);
-    });
+await parser.WithParsedAsync(options => StartExecutionAsync(options, core)).ConfigureAwait(false);
 
-await parser.WithParsedAsync(options => StartExecutionAsync(options, logger));
+await host.RunAsync().ConfigureAwait(false);
 
-await host.RunAsync();
-
-static async Task StartExecutionAsync(ActionInputs inputs, ILogger logger)
+static async Task StartExecutionAsync(ActionInputs inputs, ICoreService core)
 {
     try
     {
-        using CancellationTokenSource tokenSource = new();
+        CancellationTokenSource tokenSource = new();
 
         Console.CancelKeyPress += (_, _) => tokenSource.Cancel();
 
@@ -97,15 +78,14 @@ static async Task StartExecutionAsync(ActionInputs inputs, ILogger logger)
             writer.WriteEndObject();
         }
 
-        Console.WriteLine($"::set-output name=count::{groupCategories.Count}");
-        Console.WriteLine($"::set-output name=mode::category");
-        Console.WriteLine($"::set-output name=tests::{Encoding.UTF8.GetString(stream.ToArray()).Replace("\"", "\\\"")}");
-
-        Environment.Exit(0);
+        await Task.WhenAll(
+                core.SetOutputAsync("count", groupCategories.Count).AsTask(), 
+                core.SetOutputAsync("mode", "category").AsTask(), 
+                core.SetOutputAsync("tests", Encoding.UTF8.GetString(stream.ToArray()).Replace("\"", "\\\"")).AsTask())
+            .ConfigureAwait(false);
     }
-    catch (Exception e)
+    catch (Exception exception)
     {
-        logger.LogError(e.ToString());
-        Environment.Exit(2);
+        core.SetFailed(exception.ToString());
     }
 }
