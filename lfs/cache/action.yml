@@ -14,7 +14,7 @@ inputs:
   fetch-depth:
     description: "Number of commits to fetch. 0 indicates all history for all tags and branches"
     required: false
-    default: 1
+    default: 0
   ref:
     description: >
       The branch, tag or SHA to checkout. When checking out the repository that
@@ -45,7 +45,7 @@ runs:
   using: "composite"
   steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: ${{ inputs.fetch-depth }}
         ref: ${{ inputs.ref }}
@@ -67,7 +67,7 @@ runs:
       shell: pwsh
 
     - name: Restore LFS cache
-      uses: actions/cache@v3.2.0
+      uses: actions/cache@v4
       id: lfs-cache
       with:
         path: |
