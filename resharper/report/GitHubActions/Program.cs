@@ -50,14 +50,15 @@ static Task StartExecutionAsync(ActionInputs inputs, ILogger logger)
 
         File.WriteAllText(inputs.OutputFile, markdown);
         
-        Console.WriteLine($"::set-output name=status::{(!issues.Any() ? "success" : "failure")}");
+        Console.WriteLine($"GITHUB_OUTPUT={Environment.GetEnvironmentVariable("GITHUB_OUTPUT")}");
+        File.AppendAllText(Environment.GetEnvironmentVariable("GITHUB_OUTPUT"), $"status={(!issues.Any() ? "success" : "failure")}{Environment.NewLine}");
 
         Environment.Exit(0);
     }
     catch (Exception e)
     {
-        Console.WriteLine("::set-output name=status::failure");
-        Console.WriteLine($"::set-output name=debug::{e.ToString()}");
+        File.AppendAllText(Environment.GetEnvironmentVariable("GITHUB_OUTPUT"), $"status=failure{Environment.NewLine}");
+        File.AppendAllText(Environment.GetEnvironmentVariable("GITHUB_OUTPUT"), $"debug={e}{Environment.NewLine}");
 
         logger.LogError(e.ToString());
         Environment.Exit(99);
