@@ -50,17 +50,49 @@ static Task StartExecutionAsync(ActionInputs inputs, ILogger logger)
 
         File.WriteAllText(inputs.OutputFile, markdown);
         
-        Console.WriteLine($"GITHUB_OUTPUT={Environment.GetEnvironmentVariable("GITHUB_OUTPUT")}");
-        File.AppendAllText(Environment.GetEnvironmentVariable("GITHUB_OUTPUT"), $"status={(!issues.Any() ? "success" : "failure")}{Environment.NewLine}");
+        var githubOutput = Environment.GetEnvironmentVariable("GITHUB_OUTPUT");
+        
+        if (!string.IsNullOrEmpty(githubOutput))
+        {
+            Console.WriteLine($"Setting output to GITHUB_OUTPUT file: {githubOutput}");
+            File.AppendAllText(githubOutput, $"status={(!issues.Any() ? "success" : "failure")}{Environment.NewLine}");
+        }
+        else
+        {
+            Console.WriteLine("Warning: GITHUB_OUTPUT environment variable not set. Outputs will not be available.");
+        }
 
         Environment.Exit(0);
     }
     catch (Exception e)
     {
-        File.AppendAllText(Environment.GetEnvironmentVariable("GITHUB_OUTPUT"), $"status=failure{Environment.NewLine}");
-        File.AppendAllText(Environment.GetEnvironmentVariable("GITHUB_OUTPUT"), $"debug={e}{Environment.NewLine}");
-
+        logger.LogError($"Error occurred: {e.Message}");
         logger.LogError(e.ToString());
+        
+        var githubOutput = Environment.GetEnvironmentVariable("GITHUB_OUTPUT");
+        
+        if (!string.IsNullOrEmpty(githubOutput))
+        {
+            try
+            {
+                // Escape the error message for GitHub Actions output format
+                var escapedError = e.ToString()
+                    .Replace("%", "%25")
+                    .Replace("\r", "%0D")
+                    .Replace("\n", "%0A");
+                    
+                File.AppendAllText(githubOutput, $"status=failure{Environment.NewLine}");
+                File.AppendAllText(githubOutput, $"debug={escapedError}{Environment.NewLine}");
+            }
+            catch (Exception outputEx)
+            {
+                logger.LogError($"Failed to write to GITHUB_OUTPUT: {outputEx.Message}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("Warning: GITHUB_OUTPUT environment variable not set. Outputs will not be available.");
+        }
         Environment.Exit(99);
     }
 

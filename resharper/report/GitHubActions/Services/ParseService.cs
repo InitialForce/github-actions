@@ -9,10 +9,28 @@ namespace InitialForce.GitHubActions.ReSharper.Report.Services
         {
             if (!File.Exists(inputs.InspectionFile))
             {
-                throw new Exception($"Inspection file {inputs.InspectionFile} doesn't exists");
+                var currentDir = Directory.GetCurrentDirectory();
+                var absolutePath = Path.GetFullPath(inputs.InspectionFile);
+                throw new FileNotFoundException(
+                    $"Inspection file not found: '{inputs.InspectionFile}'. " +
+                    $"Absolute path: '{absolutePath}'. " +
+                    $"Current directory: '{currentDir}'. " +
+                    $"Please ensure the inspection file exists at the specified location.",
+                    inputs.InspectionFile);
             }
 
-            var xElement = XElement.Load(inputs.InspectionFile);
+            XElement xElement;
+            try
+            {
+                xElement = XElement.Load(inputs.InspectionFile);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to parse XML from inspection file '{inputs.InspectionFile}'. " +
+                    $"Please ensure the file contains valid XML format. Error: {ex.Message}", ex);
+            }
+            
             var issueTypes = ExtractIssueTypes(xElement);
             var issues = ExtractIssues(xElement, issueTypes);
 
