@@ -64,6 +64,32 @@ static Task StartExecutionAsync(ActionInputs inputs, ILogger logger)
 
         Environment.Exit(0);
     }
+    catch (FileNotFoundException fnf)
+    {
+        // Special handling for file not found errors with suggestions
+        Console.WriteLine();
+        Console.WriteLine("❌ ERROR: " + fnf.Message);
+        Console.WriteLine();
+        
+        logger.LogError($"File not found: {fnf.FileName}");
+        
+        var githubOutput = Environment.GetEnvironmentVariable("GITHUB_OUTPUT");
+        
+        if (!string.IsNullOrEmpty(githubOutput))
+        {
+            try
+            {
+                File.AppendAllText(githubOutput, $"status=failure{Environment.NewLine}");
+                File.AppendAllText(githubOutput, $"debug=File not found: {fnf.FileName}{Environment.NewLine}");
+            }
+            catch (Exception outputEx)
+            {
+                logger.LogError($"Failed to write to GITHUB_OUTPUT: {outputEx.Message}");
+            }
+        }
+        
+        Environment.Exit(1);
+    }
     catch (Exception e)
     {
         logger.LogError($"Error occurred: {e.Message}");

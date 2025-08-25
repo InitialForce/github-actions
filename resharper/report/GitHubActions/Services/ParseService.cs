@@ -11,12 +11,67 @@ namespace InitialForce.GitHubActions.ReSharper.Report.Services
             {
                 var currentDir = Directory.GetCurrentDirectory();
                 var absolutePath = Path.GetFullPath(inputs.InspectionFile);
-                throw new FileNotFoundException(
-                    $"Inspection file not found: '{inputs.InspectionFile}'. " +
+                var fileName = Path.GetFileName(inputs.InspectionFile);
+                
+                // Get workspace root (GitHub Actions workspace or parent directories)
+                var workspaceRoot = GetWorkspaceRoot(currentDir);
+                
+                // Search for inspection files in multiple locations
+                var searchSuggestions = new List<string>();
+                
+                // Search in workspace root and all subdirectories
+                searchSuggestions.AddRange(FindInspectionFiles(workspaceRoot, fileName));
+                
+                // Also search in current directory if different from workspace
+                if (currentDir != workspaceRoot)
+                {
+                    searchSuggestions.AddRange(FindInspectionFiles(currentDir, fileName));
+                }
+                
+                // Search in parent directory too (in case we're in a subdirectory)
+                var parentDir = Directory.GetParent(currentDir)?.FullName;
+                if (parentDir != null && parentDir != workspaceRoot)
+                {
+                    searchSuggestions.AddRange(FindInspectionFiles(parentDir, fileName));
+                }
+                
+                // Remove duplicates and order by relevance
+                searchSuggestions = searchSuggestions
+                    .Distinct()
+                    .OrderBy(f => GetPathRelevanceScore(f, inputs.InspectionFile))
+                    .ToList();
+                
+                var errorMessage = $"Inspection file not found: '{inputs.InspectionFile}'. " +
                     $"Absolute path: '{absolutePath}'. " +
-                    $"Current directory: '{currentDir}'. " +
-                    $"Please ensure the inspection file exists at the specified location.",
-                    inputs.InspectionFile);
+                    $"Current directory: '{currentDir}'.";
+                
+                if (workspaceRoot != currentDir)
+                {
+                    errorMessage += $" Workspace root: '{workspaceRoot}'.";
+                }
+                
+                if (searchSuggestions.Any())
+                {
+                    errorMessage += "\n\n🔍 Found possible inspection files in the workspace:";
+                    foreach (var suggestion in searchSuggestions.Take(5))
+                    {
+                        var relativePath = Path.GetRelativePath(currentDir, suggestion);
+                        errorMessage += $"\n  ✓ ./{relativePath.Replace('\\', '/')}";
+                    }
+                    errorMessage += "\n\n💡 Suggestion: Update your workflow to use one of the paths above.";
+                    
+                    if (searchSuggestions.Count > 5)
+                    {
+                        errorMessage += $"\n   (and {searchSuggestions.Count - 5} more files found)";
+                    }
+                }
+                else
+                {
+                    errorMessage += "\n\n⚠️ No inspection log files found in the workspace. " +
+                        "Please ensure the inspection step completed successfully.";
+                }
+                
+                throw new FileNotFoundException(errorMessage, inputs.InspectionFile);
             }
 
             XElement xElement;
@@ -90,5 +145,127 @@ namespace InitialForce.GitHubActions.ReSharper.Report.Services
 
         private static int? ExtractLine(XAttribute? offsetAttribute) =>
             offsetAttribute == null ? new int?() : Convert.ToInt32(offsetAttribute!.Value);
+        
+        private string GetWorkspaceRoot(string currentDir)
+        {
+            // Check for GitHub Actions workspace environment variable
+            var githubWorkspace = Environment.GetEnvironmentVariable("GITHUB_WORKSPACE");
+            if (!string.IsNullOrEmpty(githubWorkspace) && Directory.Exists(githubWorkspace))
+            {
+                return githubWorkspace;
+            }
+            
+            // Look for common workspace indicators
+            var dir = new DirectoryInfo(currentDir);
+            while (dir != null)
+            {
+                // Check for common CI/workspace indicators
+                if (File.Exists(Path.Combine(dir.FullName, ".github", "workflows")) ||
+                    Directory.Exists(Path.Combine(dir.FullName, ".github")) ||
+                    File.Exists(Path.Combine(dir.FullName, ".gitignore")) ||
+                    Directory.Exists(Path.Combine(dir.FullName, ".git")))
+                {
+                    return dir.FullName;
+                }
+                
+                // Don't go too far up
+                if (dir.Parent == null || dir.Parent.FullName == dir.Root.FullName)
+                {
+                    break;
+                }
+                
+                dir = dir.Parent;
+            }
+            
+            // Default to current directory if no workspace root found
+            return currentDir;
+        }
+        
+        private int GetPathRelevanceScore(string filePath, string originalPath)
+        {
+            var score = 0;
+            
+            // Prefer files with similar directory structure
+            var originalParts = originalPath.Replace('\\', '/').Split('/');
+            var fileParts = filePath.Replace('\\', '/').Split('/');
+            
+            foreach (var part in originalParts)
+            {
+                if (fileParts.Contains(part))
+                {
+                    score -= 10; // Lower score is better
+                }
+            }
+            
+            // Prefer shorter paths
+            score += filePath.Length;
+            
+            // Prefer files in expected locations
+            if (filePath.Contains("inspection-results")) score -= 50;
+            if (filePath.Contains("artifacts")) score -= 30;
+            if (filePath.Contains("src")) score -= 20;
+            if (filePath.Contains("BUILD")) score += 20; // Deprioritize BUILD directory
+            
+            return score;
+        }
+        
+        private List<string> FindInspectionFiles(string baseDirectory, string fileName)
+        {
+            var foundFiles = new List<string>();
+            
+            if (!Directory.Exists(baseDirectory))
+            {
+                return foundFiles;
+            }
+            
+            try
+            {
+                // Search for the specific file name first
+                var specificFiles = Directory.GetFiles(baseDirectory, fileName, SearchOption.AllDirectories)
+                    .Where(f => !f.Contains("node_modules") && !f.Contains(".git") && !f.Contains("/.git/"))
+                    .ToList();
+                
+                foundFiles.AddRange(specificFiles);
+                
+                // If no specific file found, search for any .log files that might be inspection results
+                if (!foundFiles.Any() && fileName.EndsWith(".log"))
+                {
+                    var patterns = new[] { "inspect*.log", "*inspection*.log", "inspectcode.xml" };
+                    foreach (var pattern in patterns)
+                    {
+                        var matchingFiles = Directory.GetFiles(baseDirectory, pattern, SearchOption.AllDirectories)
+                            .Where(f => !f.Contains("node_modules") && !f.Contains(".git") && !f.Contains("/.git/"))
+                            .Where(f => IsLikelyInspectionFile(f))
+                            .Take(5);
+                        
+                        foundFiles.AddRange(matchingFiles);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // If directory search fails, just log and return what we have
+                Console.WriteLine($"Note: Could not search all directories in {baseDirectory}: {ex.Message}");
+            }
+            
+            return foundFiles.Distinct().ToList();
+        }
+        
+        private bool IsLikelyInspectionFile(string filePath)
+        {
+            try
+            {
+                // Quick check if file looks like ReSharper inspection output
+                var firstLine = File.ReadLines(filePath).FirstOrDefault();
+                return firstLine != null && 
+                    (firstLine.Contains("<?xml") || 
+                     firstLine.Contains("JetBrains") || 
+                     firstLine.Contains("Inspect Code"));
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }
